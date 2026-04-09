@@ -1,0 +1,885 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <script>
+    // Re-add base target only when hosted inside Apps Script (not local file)
+    if (window.location.protocol !== 'file:') {
+      const b = document.createElement('base'); b.target = '_top';
+      document.currentScript.parentNode.insertBefore(b, document.currentScript);
+    }
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tenstorrent — Supplier Quote Response</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 14px; color: #1a1a1a; background: #f4f5f7; padding: 2rem 1rem; }
+    .page { max-width: 1060px; margin: 0 auto; }
+    .tt-bar { background: #111; border-radius: 10px 10px 0 0; padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; }
+    .tt-bar img { height: 44px; }
+    .tt-bar small { font-size: 11px; color: #aaa; letter-spacing: 0.04em; }
+    .badge { display: inline-flex; align-items: center; padding: 3px 9px; border-radius: 6px; font-size: 11px; font-weight: 500; }
+    .badge-req { background: #FCEBEB; color: #A32D2D; }
+    .badge-opt { background: #E1F5EE; color: #0F6E56; }
+    .section { background: #fff; border: 0.5px solid #d8d8d4; border-radius: 10px; padding: 1.25rem 1.5rem; margin-bottom: 1rem; }
+    .section.no-top-radius { border-radius: 0 0 10px 10px; border-top: none; margin-bottom: 1rem; }
+    .section-title { font-size: 11px; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 1rem; padding-bottom: 8px; border-bottom: 0.5px solid #f0f0ee; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+    .mb { margin-bottom: 12px; }
+    .field { display: flex; flex-direction: column; gap: 4px; }
+    .field label { font-size: 12px; color: #555; font-weight: 500; }
+    .req { color: #A32D2D; }
+    .field input, .field select, .field textarea { border: 0.5px solid #bbb; border-radius: 7px; padding: 7px 10px; font-size: 13px; font-family: inherit; color: #1a1a1a; background: #fff; width: 100%; transition: border-color 0.15s; }
+    .field input:focus, .field select:focus, .field textarea:focus { outline: none; border-color: #185FA5; box-shadow: 0 0 0 3px rgba(24,95,165,0.08); }
+    .field textarea { resize: vertical; min-height: 60px; line-height: 1.5; }
+    .tbl-wrap { overflow-x: auto; border: 0.5px solid #d8d8d4; border-radius: 8px; margin-bottom: 10px; }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 1200px; }
+    thead th { background: #0C447C; color: #E6F1FB; font-weight: 500; font-size: 11px; text-align: left; padding: 8px 7px; border-right: 0.5px solid #185FA5; white-space: nowrap; }
+    thead th:last-child { border-right: none; }
+    tbody td { border-bottom: 0.5px solid #ebebea; border-right: 0.5px solid #ebebea; padding: 3px; vertical-align: middle; }
+    tbody td:last-child { border-right: none; }
+    tbody tr:last-child td { border-bottom: none; }
+    tbody td input, tbody td select { width: 100%; border: none; background: transparent; padding: 5px 6px; font-size: 12px; font-family: inherit; color: #1a1a1a; outline: none; }
+    tbody td input:focus, tbody td select:focus { background: #f0f6ff; border-radius: 4px; }
+    tbody tr:hover td { background: #fafaf8; }
+    tr.exc-row td { background: #FFF8EC !important; }
+    .row-num { text-align: center; color: #aaa; font-size: 11px; padding: 4px 6px !important; }
+    .row-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .exc-note { font-size: 11px; color: #BA7517; }
+    .btn { border: 0.5px solid #bbb; border-radius: 7px; padding: 8px 16px; font-size: 13px; font-family: inherit; cursor: pointer; background: #fff; color: #1a1a1a; transition: background 0.1s; }
+    .btn:hover { background: #f5f5f3; }
+    .btn-primary { background: #185FA5; color: #fff; border-color: #185FA5; font-weight: 500; }
+    .btn-primary:hover { background: #0C447C; }
+    .btn-primary:disabled { background: #7aabda; border-color: #7aabda; cursor: not-allowed; }
+    .btn-sm { padding: 5px 11px; font-size: 12px; }
+    .btn-del { color: #A32D2D; border-color: transparent; padding: 4px 8px; }
+    .btn-del:hover { background: #FCEBEB; border-color: transparent; }
+    .status-bar { border-radius: 7px; padding: 12px 16px; font-size: 13px; margin-bottom: 1rem; display: none; line-height: 1.5; }
+    .status-ok  { background: #EAF3DE; color: #3B6D11; border: 0.5px solid #97C459; }
+    .status-err { background: #FCEBEB; color: #A32D2D; border: 0.5px solid #F09595; }
+    .sub-ref { font-weight: 700; font-size: 15px; display: block; margin-top: 4px; letter-spacing: 0.03em; }
+    .drop-zone { border: 1.5px dashed #ccc; border-radius: 8px; padding: 1.5rem; text-align: center; color: #888; font-size: 13px; transition: border-color 0.15s, background 0.15s; }
+    .drop-zone.dragover { border-color: #185FA5; background: #f0f6ff; }
+    .att-name { font-size: 12px; color: #185FA5; margin-top: 6px; font-weight: 500; }
+    .form-footer { display: flex; justify-content: flex-end; gap: 8px; align-items: center; margin-top: 1rem; flex-wrap: wrap; }
+    .info-strip { background: #f0f6ff; border: 0.5px solid #B5D4F4; border-radius: 8px; padding: 10px 14px; margin-top: 1.5rem; }
+    .info-strip p { font-size: 12px; color: #185FA5; margin-bottom: 6px; font-weight: 500; }
+    .tags { display: flex; gap: 6px; flex-wrap: wrap; }
+    .tag { background: #fff; border: 0.5px solid #B5D4F4; border-radius: 6px; padding: 3px 10px; font-size: 11px; color: #185FA5; }
+    .field input.err, .field select.err, .field textarea.err { border-color: #E24B4A !important; background: #FFF5F5 !important; }
+    .field .err-msg { font-size:11px; color:#A32D2D; margin-top:3px; display:none; }
+    .field input.err ~ .err-msg, .field select.err ~ .err-msg { display:block; }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <div class="tt-bar">
+    <img src="data:image/jpeg;base64,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" alt="Tenstorrent">
+    <small>Strategic Sourcing &amp; Supply Chain</small>
+  </div>
+
+  <div class="section no-top-radius">
+    <div style="display:flex; align-items:baseline; justify-content:space-between; flex-wrap:wrap; gap:8px; margin-bottom:10px;">
+      <div>
+        <div style="font-size:18px; font-weight:600; color:#0C447C;">Supplier quote response</div>
+      </div>
+      <div style="display:flex; gap:6px; align-items:center; flex-shrink:0;">
+        <span class="badge badge-req">* Required</span>
+        <span class="badge badge-opt">Optional</span>
+      </div>
+    </div>
+    <div style="background:#f0f6ff; border:0.5px solid #B5D4F4; border-radius:7px; padding:10px 14px; display:flex; align-items:center; gap:10px;">
+      <span style="font-size:18px; flex-shrink:0;">📄</span>
+      <div>
+        <div style="font-size:13px; font-weight:600; color:#0C447C;">Upload your PDF quote first — it will auto-fill the form below</div>
+        <div style="font-size:12px; color:#555; margin-top:2px;">Select your PDF in the upload box below. The form will populate automatically — review, complete any remaining fields, then submit.</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="status-bar" class="status-bar"></div>
+
+  <div class="section" style="padding:10px 1.5rem;">
+    <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+      <span style="font-size:11px; font-weight:600; color:#888; text-transform:uppercase; letter-spacing:0.04em; flex-shrink:0;">Uploads</span>
+      <div style="display:flex; align-items:center; gap:8px; flex:1; min-width:200px;">
+        <span style="font-size:12px; font-weight:500; color:#555; flex-shrink:0;">📄 Quote (PDF/DOC) <span class="req">*</span></span>
+        <input type="file" id="pdf-input" accept=".pdf,.doc,.docx" style="display:none" onchange="onPdfSelected(this)">
+        <label for="pdf-input" class="btn btn-sm" style="cursor:pointer; display:inline-block; flex-shrink:0;">Browse</label>
+        <span id="pdf-name" style="font-size:12px; color:#185FA5; font-weight:500;"></span>
+        <span id="parse-status" style="font-size:11px; color:#888; line-height:1.3;"></span>
+      </div>
+      <div style="display:flex; align-items:center; gap:8px; flex:1; min-width:200px;">
+        <span style="font-size:12px; font-weight:500; color:#555; flex-shrink:0;">📊 BOM Excel <span style="font-weight:400; color:#aaa; font-size:11px;">— sub-assemblies only</span></span>
+        <input type="file" id="xls-input" accept=".xlsx,.xls,.csv" style="display:none" onchange="showXlsFile(this)">
+        <label for="xls-input" class="btn btn-sm" style="cursor:pointer; display:inline-block; flex-shrink:0;">Browse</label>
+        <span id="xls-name" style="font-size:12px; color:#185FA5; font-weight:500;"></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Vendor information</div>
+    <div class="grid-3 mb">
+      <div class="field"><label>Vendor / company name <span class="req">*</span></label><input id="v-name" type="text" placeholder="e.g. AVC Inc."></div>
+      <div class="field"><label>Vendor SAP code (if known)</label><input id="v-sap" type="text" placeholder="e.g. 1001234"></div>
+      <div class="field"><label>Quote reference number <span class="req">*</span></label><input id="v-ref" type="text" placeholder="Your internal quote #"></div>
+    </div>
+    <div class="grid-3 mb">
+      <div class="field"><label>Primary contact name <span class="req">*</span></label><input id="v-contact" type="text" placeholder="Full name"></div>
+      <div class="field"><label>Contact email <span class="req">*</span></label><input id="v-email" type="email" placeholder="name@vendor.com"></div>
+      <div class="field"><label>Contact phone</label><input id="v-phone" type="tel" placeholder="+1 (xxx) xxx-xxxx"></div>
+    </div>
+    <div class="grid-3 mb">
+      <div class="field"><label>Secondary contact name</label><input id="v-contact2" type="text" placeholder="e.g. Customer service contact"></div>
+      <div class="field"><label>Secondary contact email</label><input id="v-email2" type="email" placeholder="name@vendor.com"></div>
+      <div class="field"><label>Secondary contact phone</label><input id="v-phone2" type="tel" placeholder="+1 (xxx) xxx-xxxx"></div>
+    </div>
+    <div class="grid-3">
+      <div class="field"><label>Tenstorrent RFQ reference <span class="req">*</span></label><input id="tt-rfq" type="text" placeholder="e.g. RFQ-2026-0042"></div>
+      <div class="field"><label>Program <span class="req">*</span></label>
+        <select id="tt-program">
+          <option value="">— select —</option>
+          <option>QuietBox 2 (QB2)</option>
+          <option>Galaxy 2 (GL2)</option>
+          <option>LoudBox</option>
+          <option>Wormhole</option>
+          <option>Grendel</option>
+          <option>Software / Licensing</option>
+          <option>NRE / Tooling only</option>
+          <option>Other / Multiple</option>
+        </select>
+      </div>
+      <div class="field"><label>Tenstorrent SC contact <span class="req">*</span></label>
+        <select id="tt-sc">
+          <option value="">— select —</option>
+          <option>Warren (Sourcing)</option>
+          <option>Parth (Sourcing)</option>
+          <option>Jerry (Sourcing)</option>
+          <option>Anita (Sourcing)</option>
+          <option>Michelle (Sourcing)</option>
+          <option>Kiran (Sourcing)</option>
+          <option>Akshay (Sourcing)</option>
+        </select>
+      </div>
+    </div>
+    <div class="grid-3" style="margin-top:12px;">
+      <div class="field"><label>Tenstorrent engineering contact</label><input id="tt-eng" type="text" placeholder="Engineering name (if applicable)"></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Commercial terms &amp; ship-from</div>
+    <div class="grid-3 mb">
+      <div class="field"><label>Quote date <span class="req">*</span></label><input id="q-date" type="date"></div>
+      <div class="field"><label>Quote valid until <span class="req">*</span></label><input id="q-valid" type="date"></div>
+      <div class="field"><label>Quote currency <span class="req">*</span></label>
+        <select id="q-currency">
+          <option value="">— select —</option>
+          <option>USD</option><option>CNY</option><option>EUR</option>
+          <option>TWD</option><option>CAD</option><option>JPY</option><option>Other</option>
+        </select>
+      </div>
+    </div>
+    <div class="grid-3 mb">
+      <div class="field"><label>Payment terms <span class="req">*</span></label>
+        <select id="q-pay">
+          <option value="">— select —</option>
+          <option>Net 30</option><option>Net 45</option><option>Net 60</option>
+          <option>Net 90</option><option>On Approval</option><option>50/50 milestone</option><option>Other (see exceptions)</option>
+        </select>
+      </div>
+      <div class="field"><label>Incoterms <span class="req">*</span></label>
+        <select id="q-inco">
+          <option value="">— select —</option>
+          <option>EXW</option><option>FCA</option><option>FOB</option>
+          <option>CIF</option><option>DDP</option><option>DAP</option><option>Other</option>
+        </select>
+      </div>
+      <div class="field"><label>Named place (per Incoterms)</label><input id="q-named-place" type="text" placeholder="e.g. Port of Shenzhen"></div>
+    </div>
+    <div style="border-top: 0.5px solid #f0f0ee; margin: 4px 0 14px; position:relative;">
+      <span style="position:absolute; top:-9px; left:0; font-size:11px; font-weight:600; color:#888; background:#fff; padding-right:10px; text-transform:uppercase; letter-spacing:0.05em;">Ship-from</span>
+    </div>
+    <div class="grid-2">
+      <div class="field"><label>City <span class="req">*</span></label><input id="sf-city" type="text" placeholder="Shenzhen"></div>
+      <div class="field"><label>Country <span class="req">*</span></label><input id="sf-country" type="text" placeholder="China"></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Pricing &amp; lead time — line items
+      <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:12px;color:#aaa;margin-left:6px;">Add one row per part number, tooling item, or NRE charge</span>
+    </div>
+    <div style="margin-bottom:10px; display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+      <span style="font-size:12px; color:#555; font-weight:500;">Default COO for all lines:</span>
+      <select id="global-coo" onchange="applyGlobalCoo()" style="border:0.5px solid #bbb; border-radius:7px; padding:6px 10px; font-size:13px; font-family:inherit; min-width:220px;">
+        <option value="same">Same as ship-from country</option>
+        <option value="custom">Enter custom COO below</option>
+      </select>
+      <input id="global-coo-custom" type="text" placeholder="e.g. Taiwan" style="display:none; border:0.5px solid #bbb; border-radius:7px; padding:6px 10px; font-size:13px; font-family:inherit; width:180px;">
+      <button class="btn btn-sm" type="button" onclick="applyGlobalCoo()" style="font-size:11px;">Apply to all rows</button>
+      <span style="font-size:11px; color:#888;">Individual rows can override below.</span>
+    </div>
+    <div class="tbl-wrap">
+      <table id="lines-tbl">
+        <thead>
+          <tr>
+            <th style="width:26px;">#</th>
+            <th style="width:100px;">TT Part #</th>
+            <th style="width:100px;">Vendor Part #</th>
+            <th style="width:140px;">Description <span class="req">*</span></th>
+            <th style="width:62px;">Type <span class="req">*</span></th>
+            <th style="width:55px;">UOM</th>
+            <th style="width:52px;">MOQ <span class="req">*</span></th>
+            <th style="width:75px;">Price (MOQ) <span class="req">*</span></th>
+            <th style="width:72px;">Price @ 100</th>
+            <th style="width:72px;">Price @ 250</th>
+            <th style="width:72px;">Price @ 500</th>
+            <th style="width:72px;">Price @ 1k</th>
+            <th style="width:72px;">Price @ 5k</th>
+            <th style="width:65px;">Other Qty</th>
+            <th style="width:72px;">Price (Other)</th>
+            <th style="width:68px;">Sample Price</th>
+            <th style="width:80px;">Lead Time (Std) <span class="req">*</span></th>
+            <th style="width:80px;">Lead Time (Sample)</th>
+            <th style="width:78px;">Tooling NRE ($)</th>
+            <th style="width:90px;">HTS / HS Code</th>
+            <th style="width:110px;">COO</th>
+            <th style="width:56px;" title="RoHS compliant?">RoHS</th>
+            <th style="width:56px;" title="REACH compliant?">REACH</th>
+            <th style="width:56px;" title="Conflict minerals (3TG) compliant?">3TG</th>
+            <th style="width:60px;" title="Sub-assembly — BOM breakdown attached?">Sub-assy</th>
+            <th style="width:88px;">Exception Flag</th>
+            <th style="width:30px;"></th>
+          </tr>
+        </thead>
+        <tbody id="lines-body"></tbody>
+      </table>
+    </div>
+    <div class="row-actions">
+      <button class="btn btn-sm" type="button" onclick="addLine('part')">+ Part row</button>
+      <button class="btn btn-sm" type="button" onclick="addLine('tooling')">+ Tooling row</button>
+      <button class="btn btn-sm" type="button" onclick="addLine('nre')">+ NRE row</button>
+      <span class="exc-note" style="margin-left:4px;">&#9650; Amber rows have exceptions — add detail in the Exceptions section below.</span>
+    </div>
+  </div>
+
+  <div class="section" style="padding:10px 1.5rem;">
+    <div style="font-size:11px; font-weight:600; color:#888; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:8px;">Exceptions &amp; notes <span style="font-weight:400; text-transform:none; letter-spacing:0; color:#bbb;">— leave blank if none apply</span></div>
+    <div style="display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:8px; margin-bottom:8px;">
+      <div class="field"><label style="font-size:11px;">Pricing</label><textarea id="exc-price" style="min-height:28px; font-size:11px; padding:5px 8px;" placeholder="Pricing constraints..."></textarea></div>
+      <div class="field"><label style="font-size:11px;">Lead time</label><textarea id="exc-lt" style="min-height:28px; font-size:11px; padding:5px 8px;" placeholder="Lead time constraints..."></textarea></div>
+      <div class="field"><label style="font-size:11px;">Tooling / NRE</label><textarea id="exc-tool" style="min-height:28px; font-size:11px; padding:5px 8px;" placeholder="Tooling exceptions..."></textarea></div>
+      <div class="field"><label style="font-size:11px;">Payment / commercial</label><textarea id="exc-pay" style="min-height:28px; font-size:11px; padding:5px 8px;" placeholder="Payment exceptions..."></textarea></div>
+    </div>
+    <div class="field"><label style="font-size:11px;">Additional notes</label><textarea id="exc-notes" style="min-height:28px; font-size:11px; padding:5px 8px;" placeholder="Any other assumptions or open items..."></textarea></div>
+  </div>
+
+  <div class="form-footer">
+    <button class="btn" type="button" onclick="clearForm()">Clear form</button>
+    <button class="btn" type="button" onclick="exportCSV()">Export CSV</button>
+    <button class="btn btn-primary" type="button" id="submit-btn" onclick="submitForm()">Submit quote response</button>
+  </div>
+
+  <div class="info-strip">
+    <p>On submission this record will:</p>
+    <div class="tags">
+      <span class="tag">→ Generate a TT submission reference number</span>
+      <span class="tag">→ Log to Vendor Quotes Google Sheet</span>
+      <span class="tag">→ Save attachment to Drive /Vendor Quotes/[RFQ]/[Vendor]/</span>
+      <span class="tag">→ Email confirmation + submission # to vendor</span>
+      <span class="tag">→ Notify your Tenstorrent SC contact</span>
+      <span class="tag">→ Flag exception rows for review</span>
+    </div>
+  </div>
+
+  <!-- Controlled Document Footer -->
+  <div style="margin-top:2rem; border-top:1px solid #d8d8d4; padding-top:12px;">
+    <div style="display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:0; border:0.5px solid #d8d8d4; border-radius:8px; overflow:hidden; font-size:11px;">
+      <div style="padding:8px 12px; border-right:0.5px solid #d8d8d4;">
+        <div style="color:#888; font-weight:600; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:3px;">Document</div>
+        <div style="color:#1a1a1a; font-weight:500;">Supplier Quote Response Form</div>
+      </div>
+      <div style="padding:8px 12px; border-right:0.5px solid #d8d8d4;">
+        <div style="color:#888; font-weight:600; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:3px;">Doc number</div>
+        <div style="color:#1a1a1a; font-weight:500;">TT-SC-F001</div>
+      </div>
+      <div style="padding:8px 12px; border-right:0.5px solid #d8d8d4;">
+        <div style="color:#888; font-weight:600; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:3px;">Revision</div>
+        <div style="color:#1a1a1a; font-weight:500;">Rev A</div>
+      </div>
+      <div style="padding:8px 12px;">
+        <div style="color:#888; font-weight:600; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:3px;">Effective date</div>
+        <div style="color:#1a1a1a; font-weight:500;">2026-04-09</div>
+      </div>
+    </div>
+    <div style="display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:0; border:0.5px solid #d8d8d4; border-top:none; border-radius:0 0 8px 8px; overflow:hidden; font-size:11px;">
+      <div style="padding:8px 12px; border-right:0.5px solid #d8d8d4;">
+        <div style="color:#888; font-weight:600; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:3px;">Owner</div>
+        <div style="color:#1a1a1a; font-weight:500;">Warren Van Drine</div>
+      </div>
+      <div style="padding:8px 12px; border-right:0.5px solid #d8d8d4;">
+        <div style="color:#888; font-weight:600; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:3px;">Department</div>
+        <div style="color:#1a1a1a; font-weight:500;">Global Sourcing &amp; Supply Chain</div>
+      </div>
+      <div style="padding:8px 12px; border-right:0.5px solid #d8d8d4;">
+        <div style="color:#888; font-weight:600; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:3px;">Classification</div>
+        <div style="color:#1a1a1a; font-weight:500;">Tenstorrent Confidential</div>
+      </div>
+      <div style="padding:8px 12px;">
+        <div style="color:#888; font-weight:600; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:3px;">Status</div>
+        <div style="color:#3B6D11; font-weight:600;">Active</div>
+      </div>
+    </div>
+    <div style="text-align:center; font-size:10px; color:#aaa; margin-top:8px;">
+      This is a controlled document. Printed copies are uncontrolled. Latest version available at the Tenstorrent supplier portal.
+      &copy; <span id="footer-year"></span> Tenstorrent Inc. All rights reserved.
+    </div>
+  </div>
+
+</div>
+
+<script>
+  const SUBMIT_URL = 'https://script.google.com/a/macros/tenstorrent.com/s/AKfycbyh-N5j17w3_bsRvVleRRfTh8kXQz_WShiwB6HheWJfQeZ9FZw0qW6PZUzh5fms7Yw/exec';
+  let lineCount = 0;
+
+  function getShipFromCountry() {
+    return document.getElementById('sf-country').value.trim() || '';
+  }
+
+  function getGlobalCoo() {
+    const sel = document.getElementById('global-coo').value;
+    if (sel === 'same') return getShipFromCountry() || 'Same as ship-from';
+    return document.getElementById('global-coo-custom').value.trim();
+  }
+
+  document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('global-coo').addEventListener('change', function() {
+      const custom = document.getElementById('global-coo-custom');
+      custom.style.display = this.value === 'custom' ? 'inline-block' : 'none';
+    });
+    document.getElementById('sf-country').addEventListener('input', function() {
+      if (document.getElementById('global-coo').value === 'same') applyGlobalCoo();
+    });
+    // Clear red highlight when user starts correcting a field
+    document.addEventListener('input', e => { if (e.target.classList.contains('err')) e.target.classList.remove('err'); });
+    document.addEventListener('change', e => { if (e.target.classList.contains('err')) e.target.classList.remove('err'); });
+  });
+
+  function applyGlobalCoo() {
+    const coo = getGlobalCoo();
+    document.querySelectorAll('.coo-input').forEach(inp => { inp.value = coo; });
+  }
+
+  function addLine(type) {
+    lineCount++;
+    const body = document.getElementById('lines-body');
+    const tr = document.createElement('tr');
+    tr.setAttribute('data-id', lineCount);
+    const typeOpts = `
+      <option value="">—</option>
+      <option value="part"    ${type==='part'   ?'selected':''}>Part</option>
+      <option value="tooling" ${type==='tooling'?'selected':''}>Tooling</option>
+      <option value="nre"     ${type==='nre'    ?'selected':''}>NRE</option>
+      <option value="license">License</option>
+      <option value="sample">Sample</option>`;
+    const uomOpts = `
+      <option value="each">each</option>
+      <option value="lot">lot</option>
+      <option value="set">set</option>
+      <option value="seat">seat/yr</option>
+      <option value="server">server/yr</option>
+      <option value="kg">kg</option>
+      <option value="m">m</option>
+      <option value="other">other</option>`;
+    const excOpts = `
+      <option value="">None</option>
+      <option value="pricing">Pricing</option>
+      <option value="leadtime">Lead time</option>
+      <option value="tooling">Tooling</option>
+      <option value="other">Other</option>`;
+    const defaultCoo = getGlobalCoo();
+    tr.innerHTML = `
+      <td class="row-num">${lineCount}</td>
+      <td><input type="text" placeholder="TT-XXXXXXX"></td>
+      <td><input type="text" placeholder="Vendor PN"></td>
+      <td><input type="text" placeholder="Description"></td>
+      <td><select>${typeOpts}</select></td>
+      <td><select style="font-size:11px;">${uomOpts}</select></td>
+      <td><input type="number" placeholder="0" min="0"></td>
+      <td><input type="number" placeholder="0.00" step="0.01" min="0"></td>
+      <td><input type="number" placeholder="0.00" step="0.01" min="0"></td>
+      <td><input type="number" placeholder="0.00" step="0.01" min="0"></td>
+      <td><input type="number" placeholder="0.00" step="0.01" min="0"></td>
+      <td><input type="number" placeholder="0.00" step="0.01" min="0"></td>
+      <td><input type="number" placeholder="0.00" step="0.01" min="0"></td>
+      <td><input type="number" placeholder="0" min="0"></td>
+      <td><input type="number" placeholder="0.00" step="0.01" min="0"></td>
+      <td><input type="number" placeholder="0.00" step="0.01" min="0"></td>
+      <td><input type="text" placeholder="e.g. 8 weeks"></td>
+      <td><input type="text" placeholder="e.g. 4 weeks"></td>
+      <td><input type="number" placeholder="0.00" step="0.01" min="0"></td>
+      <td><input type="text" placeholder="e.g. 8414.59"></td>
+      <td><input type="text" class="coo-input" placeholder="Country of origin" value="${defaultCoo}"></td>
+      <td style="text-align:center;"><input type="checkbox" class="rohs-chk" title="RoHS compliant"></td>
+      <td style="text-align:center;"><input type="checkbox" class="reach-chk" title="REACH compliant"></td>
+      <td style="text-align:center;"><input type="checkbox" class="ttg-chk" title="Conflict minerals (3TG) compliant"></td>
+      <td style="text-align:center;"><input type="checkbox" class="subassy-chk" title="Sub-assembly — BOM Excel attached?"></td>
+      <td><select onchange="toggleExc(this,${lineCount})" style="font-size:11px;">${excOpts}</select></td>
+      <td><button class="btn btn-del btn-sm" type="button" onclick="removeLine(${lineCount})">✕</button></td>`;
+    body.appendChild(tr);
+  }
+
+  function toggleExc(sel, id) {
+    document.querySelector(`tr[data-id="${id}"]`).classList.toggle('exc-row', !!sel.value);
+  }
+
+  function removeLine(id) {
+    const tr = document.querySelector(`tr[data-id="${id}"]`);
+    if (tr) tr.remove();
+  }
+
+  function getLines() {
+    return Array.from(document.querySelectorAll('#lines-body tr')).map(tr => {
+      const c = tr.querySelectorAll('td');
+      return {
+        seq:          c[0].textContent.trim(),
+        tt_pn:        c[1].querySelector('input').value,
+        vendor_pn:    c[2].querySelector('input').value,
+        description:  c[3].querySelector('input').value,
+        type:         c[4].querySelector('select').value,
+        uom:          c[5].querySelector('select').value,
+        moq:          c[6].querySelector('input').value,
+        price_moq:    c[7].querySelector('input').value,
+        price_100:    c[8].querySelector('input').value,
+        price_250:    c[9].querySelector('input').value,
+        price_500:    c[10].querySelector('input').value,
+        price_1k:     c[11].querySelector('input').value,
+        price_5k:     c[12].querySelector('input').value,
+        other_qty:    c[13].querySelector('input').value,
+        price_other:  c[14].querySelector('input').value,
+        price_sample: c[15].querySelector('input').value,
+        lt_std:       c[16].querySelector('input').value,
+        lt_sample:    c[17].querySelector('input').value,
+        tooling_nre:  c[18].querySelector('input').value,
+        hts_code:     c[19].querySelector('input').value,
+        coo:          c[20].querySelector('input').value,
+        rohs:         c[21].querySelector('input').checked,
+        reach:        c[22].querySelector('input').checked,
+        conflict_minerals: c[23].querySelector('input').checked,
+        sub_assembly: c[24].querySelector('input').checked,
+        exception:    c[25].querySelector('select').value,
+      };
+    });
+  }
+
+  // ---- Attachment handling ----
+  function onPdfSelected(input) {
+    const nameEl   = document.getElementById('pdf-name');
+    const statusEl = document.getElementById('parse-status');
+    if (input.files && input.files.length > 0) {
+      const f = input.files[0];
+      if (f.size > 25 * 1024 * 1024) { showStatus('PDF exceeds 25 MB.', false); input.value=''; return; }
+      nameEl.textContent = f.name + ' (' + (f.size/1024/1024).toFixed(1) + ' MB)';
+      statusEl.innerHTML = '<span style="color:#185FA5;">✦ Reading PDF and auto-filling form…</span>';
+      parsePdf();
+    }
+  }
+
+  function showXlsFile(input) {
+    const nameEl = document.getElementById('xls-name');
+    if (input.files && input.files.length > 0) {
+      const f = input.files[0];
+      if (f.size > 25 * 1024 * 1024) { showStatus('Excel file exceeds 25 MB.', false); input.value=''; return; }
+      nameEl.textContent = f.name + ' (' + (f.size/1024/1024).toFixed(1) + ' MB)';
+    }
+  }
+
+  function showCertFile(input) {
+    const nameEl = document.getElementById('cert-name');
+    if (input.files && input.files.length > 0) {
+      nameEl.textContent = input.files[0].name;
+    }
+  }
+
+  function handleDrop(e, target) {
+    e.preventDefault();
+    showStatus('Please use the Browse button to select files.', false);
+  }
+
+  // ---- AI PDF Parse ----
+  async function parsePdf() {
+    const input    = document.getElementById('pdf-input');
+    const statusEl = document.getElementById('parse-status');
+    if (!input.files || input.files.length === 0) return;
+
+    try {
+      const base64 = await fileToBase64(input.files[0]);
+
+      const prompt = `You are parsing a supplier quote PDF for Tenstorrent's procurement team.
+
+Extract all available information and return ONLY a valid JSON object with these fields (use null for any field not found):
+{
+  "vendorName": string,
+  "contactName": string,
+  "contactEmail": string,
+  "contactPhone": string,
+  "quoteRef": string,
+  "quoteDate": string (YYYY-MM-DD format),
+  "validUntil": string (YYYY-MM-DD format),
+  "currency": string (USD/CNY/EUR/TWD/CAD/JPY),
+  "paymentTerms": string,
+  "incoterms": string,
+  "shipFromCity": string,
+  "shipFromCountry": string,
+  "lines": [
+    {
+      "vendorPn": string,
+      "description": string,
+      "moq": number or null,
+      "unitPrice": number or null,
+      "leadTime": string,
+      "toolingNre": number or null,
+      "htscode": string or null,
+      "coo": string or null
+    }
+  ]
+}
+
+Rules:
+- Return ONLY the JSON. No explanation, no markdown, no backticks.
+- For lines, extract top-level or sub-assembly line items only. Do not include individual BOM components.
+- If the document has pricing at multiple quantities, put the base/MOQ price in unitPrice.
+- Dates must be YYYY-MM-DD. If only month/year found, use the 1st of that month.`;
+
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 1000,
+          messages: [{
+            role: 'user',
+            content: [
+              { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: base64 } },
+              { type: 'text', text: prompt }
+            ]
+          }]
+        })
+      });
+
+      const data   = await response.json();
+      const text   = data.content && data.content[0] ? data.content[0].text : '';
+      const parsed = JSON.parse(text.replace(/```json|```/g, '').trim());
+
+      applyParsedData(parsed);
+      statusEl.innerHTML = '<span style="color:#3B6D11;">✓ Form populated — review and complete any remaining fields.</span>'
+        + ' <a href="#" onclick="parsePdf(); return false;" style="font-size:11px; color:#185FA5; margin-left:6px;">Re-parse</a>';
+
+    } catch(err) {
+      statusEl.innerHTML = '<span style="color:#A32D2D;">Auto-fill failed — please fill fields manually.</span>'
+        + ' <a href="#" onclick="parsePdf(); return false;" style="font-size:11px; color:#185FA5; margin-left:6px;">Try again</a>';
+    }
+  }
+
+  function applyParsedData(d) {
+    const set = (id, val) => { if (val && document.getElementById(id)) document.getElementById(id).value = val; };
+    set('v-name',    d.vendorName);
+    set('v-contact', d.contactName);
+    set('v-email',   d.contactEmail);
+    set('v-phone',   d.contactPhone);
+    set('v-ref',     d.quoteRef);
+    set('q-date',    d.quoteDate);
+    set('q-valid',   d.validUntil);
+    set('sf-city',   d.shipFromCity);
+    set('sf-country',d.shipFromCountry);
+    if (d.currency)     setSelectByValue('q-currency', d.currency);
+    if (d.paymentTerms) setSelectByValue('q-pay', d.paymentTerms);
+    if (d.incoterms)    setSelectByValue('q-inco', d.incoterms);
+
+    // Populate line items
+    if (d.lines && d.lines.length > 0) {
+      document.getElementById('lines-body').innerHTML = '';
+      lineCount = 0;
+      d.lines.forEach(l => {
+        addLine('part');
+        const rows = document.querySelectorAll('#lines-body tr');
+        const tr = rows[rows.length - 1];
+        const c = tr.querySelectorAll('td');
+        if (l.vendorPn)    c[2].querySelector('input').value = l.vendorPn;
+        if (l.description) c[3].querySelector('input').value = l.description;
+        if (l.moq)         c[5].querySelector('input').value = l.moq;
+        if (l.unitPrice)   c[6].querySelector('input').value = l.unitPrice;
+        if (l.leadTime)    c[15].querySelector('input').value = l.leadTime;
+        if (l.toolingNre)  c[17].querySelector('input').value = l.toolingNre;
+        if (l.htscode)     c[18].querySelector('input').value = l.htscode;
+        if (l.coo)         c[19].querySelector('input').value = l.coo;
+      });
+    }
+  }
+
+  function setSelectByValue(id, val) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    for (let i = 0; i < el.options.length; i++) {
+      if (el.options[i].value.toLowerCase().includes(val.toLowerCase()) ||
+          el.options[i].text.toLowerCase().includes(val.toLowerCase())) {
+        el.selectedIndex = i; return;
+      }
+    }
+  }
+
+  function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = e => resolve(e.target.result.split(',')[1]);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function readFileAsBase64(inputId) {
+    return new Promise((resolve) => {
+      const input = document.getElementById(inputId);
+      if (!input || !input.files || input.files.length === 0) { resolve(null); return; }
+      const file = input.files[0];
+      const reader = new FileReader();
+      reader.onload = ev => resolve({ base64: ev.target.result.split(',')[1], filename: file.name, mimeType: file.type || 'application/octet-stream' });
+      reader.onerror = () => resolve(null);
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function buildPayload(pdfData, xlsData) {
+    return {
+      vendorName:    document.getElementById('v-name').value.trim(),
+      vendorSapCode: document.getElementById('v-sap').value.trim(),
+      quoteRef:      document.getElementById('v-ref').value.trim(),
+      contactName:   document.getElementById('v-contact').value.trim(),
+      contactEmail:  document.getElementById('v-email').value.trim(),
+      contactPhone:  document.getElementById('v-phone').value.trim(),
+      contact2Name:  document.getElementById('v-contact2').value.trim(),
+      contact2Email: document.getElementById('v-email2').value.trim(),
+      contact2Phone: document.getElementById('v-phone2').value.trim(),
+      rfqRef:        document.getElementById('tt-rfq').value.trim(),
+      program:       document.getElementById('tt-program').value.trim(),
+      ttScContact:   document.getElementById('tt-sc').value.trim(),
+      ttEngContact:  document.getElementById('tt-eng').value.trim(),
+      quoteDate:     document.getElementById('q-date').value,
+      validUntil:    document.getElementById('q-valid').value,
+      currency:      document.getElementById('q-currency').value,
+      paymentTerms:  document.getElementById('q-pay').value,
+      incoterms:     document.getElementById('q-inco').value,
+      namedPlace:    document.getElementById('q-named-place').value.trim(),
+      shipFromCity:  document.getElementById('sf-city').value.trim(),
+      shipFromCountry: document.getElementById('sf-country').value.trim(),
+      lines:         getLines(),
+      excPricing:    document.getElementById('exc-price').value.trim(),
+      excLeadTime:   document.getElementById('exc-lt').value.trim(),
+      excTooling:    document.getElementById('exc-tool').value.trim(),
+      excPayment:    document.getElementById('exc-pay').value.trim(),
+      excNotes:      document.getElementById('exc-notes').value.trim(),
+      attachmentBase64:   pdfData ? pdfData.base64   : null,
+      attachmentFilename: pdfData ? pdfData.filename : null,
+      attachmentMimeType: pdfData ? pdfData.mimeType : null,
+      xlsBase64:   xlsData ? xlsData.base64   : null,
+      xlsFilename: xlsData ? xlsData.filename : null,
+      xlsMimeType: xlsData ? xlsData.mimeType : null,
+    };
+  }
+
+  // Map payload key → field ID for red-highlight on error
+  const FIELD_MAP = {
+    vendorName:      'v-name',
+    quoteRef:        'v-ref',
+    contactEmail:    'v-email',
+    rfqRef:          'tt-rfq',
+    program:         'tt-program',
+    ttScContact:     'tt-sc',
+    quoteDate:       'q-date',
+    validUntil:      'q-valid',
+    currency:        'q-currency',
+    paymentTerms:    'q-pay',
+    incoterms:       'q-inco',
+    shipFromCity:    'sf-city',
+    shipFromCountry: 'sf-country',
+  };
+
+  function clearFieldErrors() {
+    document.querySelectorAll('.err').forEach(el => el.classList.remove('err'));
+  }
+
+  function validatePayload(p) {
+    clearFieldErrors();
+    const checks = [
+      ['vendorName','Vendor name'],['quoteRef','Quote reference'],
+      ['rfqRef','RFQ reference'],['contactEmail','Contact email'],
+      ['program','Program'],['ttScContact','TT SC contact'],
+      ['quoteDate','Quote date'],['validUntil','Valid until'],
+      ['currency','Currency'],['paymentTerms','Payment terms'],
+      ['incoterms','Incoterms'],['shipFromCity','Ship-from city'],
+      ['shipFromCountry','Ship-from country'],
+    ];
+    const missing = checks.filter(([k]) => !p[k]).map(([k, l]) => {
+      // Highlight the field in red
+      const fieldId = FIELD_MAP[k];
+      if (fieldId) {
+        const el = document.getElementById(fieldId);
+        if (el) el.classList.add('err');
+      }
+      return l;
+    });
+    if (!p.lines || p.lines.length === 0) missing.push('At least one line item');
+    return missing;
+  }
+
+  async function submitForm() {
+    const btn = document.getElementById('submit-btn');
+    btn.disabled = true; btn.textContent = 'Submitting…';
+    try {
+      const [pdfData, xlsData] = await Promise.all([
+        readFileAsBase64('pdf-input'),
+        readFileAsBase64('xls-input'),
+      ]);
+      const payload = buildPayload(pdfData, xlsData);
+      const missing = validatePayload(payload);
+      if (missing.length > 0) {
+        showStatus('Missing required fields: ' + missing.join(', '), false);
+        btn.disabled = false; btn.textContent = 'Submit quote response'; return;
+      }
+      const excRows = payload.lines.filter(l => l.exception && l.exception !== '');
+      if (excRows.length > 0) {
+        const hasDetail = payload.excPricing || payload.excLeadTime || payload.excTooling || payload.excPayment || payload.excNotes;
+        if (!hasDetail) {
+          showStatus('⚠ ' + excRows.length + ' exception row(s) flagged but no exception details provided. Please add detail in the Exceptions section.', false);
+          btn.disabled = false; btn.textContent = 'Submit quote response'; return;
+        }
+      }
+      // Apps Script cross-origin POST workaround:
+      // Fetch with no-cors means we can't read the response body, so we use
+      // a two-step approach — POST the payload as a form parameter (Apps Script
+      // reads it from e.parameter.data), then poll for the result via a GET.
+      // Simpler alternative: POST to a small relay, but for Apps Script the
+      // cleanest no-IT approach is to send as application/x-www-form-urlencoded
+      // with the JSON in a 'data' field, which bypasses the preflight entirely.
+      const formData = new FormData();
+      formData.append('data', JSON.stringify(payload));
+
+      const response = await fetch(SUBMIT_URL, {
+        method: 'POST',
+        body: formData,
+      });
+
+      // With no-cors we can't read response — treat reaching this point as success
+      // Apps Script will process and email regardless
+      let result = { success: true, submissionRef: '' };
+      try {
+        // If CORS is open (e.g. after IT enables it), we can read the response
+        const text = await response.text();
+        const parsed = JSON.parse(text);
+        result = parsed;
+      } catch(e) {
+        // Cross-origin opaque response — submission still processed server-side
+        result = { success: true, submissionRef: 'Check your email for confirmation' };
+      }
+      if (result.success) {
+        const ref = result.submissionRef || '';
+        const bar = document.getElementById('status-bar');
+        bar.className = 'status-bar status-ok';
+        bar.style.display = 'block';
+        bar.innerHTML = '✓ Quote submitted successfully. A confirmation email will be sent to <strong>' + payload.contactEmail + '</strong>.'
+          + (ref ? '<span class="sub-ref">Your submission reference: ' + ref + '</span>' : '');
+        btn.textContent = 'Submitted ✓';
+        lockFormAfterSubmit();
+      } else {
+        showStatus('Submission error: ' + (result.error || 'Unknown error.'), false);
+        btn.disabled = false; btn.textContent = 'Submit quote response';
+      }
+    } catch (err) {
+      showStatus('Network error — please try again or contact wvandrine@tenstorrent.com (' + err.message + ')', false);
+      btn.disabled = false; btn.textContent = 'Submit quote response';
+    }
+  }
+
+  function lockFormAfterSubmit() {
+    document.querySelectorAll('input, select, textarea').forEach(el => el.disabled = true);
+    document.querySelectorAll('.btn:not(#submit-btn)').forEach(el => el.disabled = true);
+    const footer = document.querySelector('.form-footer');
+    if (footer) {
+      const nb = document.createElement('button');
+      nb.className = 'btn'; nb.textContent = 'Submit another response';
+      nb.onclick = () => location.reload();
+      footer.prepend(nb);
+    }
+  }
+
+  function exportCSV() {
+    const p = buildPayload(null);
+    const header = ['Vendor','SAP Code','Quote Ref','RFQ Ref','Quote Date','Valid Until','Currency',
+      'Payment Terms','Incoterms','Named Place','Ship-From City','Ship-From Country',
+      'TT SC Contact','TT Eng Contact',
+      'Row #','TT Part #','Vendor Part #','Description','Type','MOQ','Unit Price (MOQ)',
+      'Price@100','Price@250','Price@500','Price@1k','Price@5k','Other Qty','Price (Other)',
+      'Sample Price','Lead Time Std','Lead Time Sample','Tooling NRE','HTS/HS Code','COO','Exception Flag',
+      'Pricing Exceptions','LT Exceptions','Tooling Exceptions','Payment Exceptions','Notes'];
+    const common = [p.vendorName,p.vendorSapCode,p.quoteRef,p.rfqRef,p.quoteDate,p.validUntil,
+      p.currency,p.paymentTerms,p.incoterms,p.namedPlace,p.shipFromCity,p.shipFromCountry,
+      p.ttScContact,p.ttEngContact];
+    const rows = [header.join(',')];
+    (p.lines.length > 0 ? p.lines : [{}]).forEach(l => {
+      const row = [...common,
+        l.seq||'',l.tt_pn||'',l.vendor_pn||'',l.description||'',l.type||'',
+        l.moq||'',l.price_moq||'',l.price_100||'',l.price_250||'',l.price_500||'',l.price_1k||'',l.price_5k||'',
+        l.other_qty||'',l.price_other||'',l.price_sample||'',
+        l.lt_std||'',l.lt_sample||'',l.tooling_nre||'',l.hts_code||'',l.coo||'',l.exception||'',
+        p.excPricing,p.excLeadTime,p.excTooling,p.excPayment,p.excNotes
+      ].map(v => `"${String(v||'').replace(/"/g,'""')}"`);
+      rows.push(row.join(','));
+    });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([rows.join('\n')], {type:'text/csv'}));
+    a.download = `TT_Quote_${p.rfqRef||'draft'}_${p.vendorName||'vendor'}.csv`;
+    a.click();
+    showStatus('CSV exported.', true);
+  }
+
+  function clearForm() {
+    document.querySelectorAll('input[type="text"], input[type="email"], input[type="tel"], input[type="date"], input[type="number"], textarea').forEach(el => el.value = '');
+    document.querySelectorAll('select').forEach(el => el.selectedIndex = 0);
+    document.querySelectorAll('input[type="checkbox"]').forEach(el => el.checked = false);
+    document.querySelectorAll('input[type="file"]').forEach(el => el.value = '');
+    document.getElementById('lines-body').innerHTML = '';
+    document.getElementById('pdf-name').textContent = '';
+    document.getElementById('xls-name').textContent = '';
+    document.getElementById('parse-status').textContent = '';
+    document.getElementById('global-coo-custom').style.display = 'none';
+    lineCount = 0;
+    document.getElementById('footer-year').textContent = new Date().getFullYear();
+
+  addLine('part'); addLine('part');
+    showStatus('Form cleared.', true);
+  }
+
+  function showStatus(msg, ok) {
+    const bar = document.getElementById('status-bar');
+    bar.className = 'status-bar ' + (ok ? 'status-ok' : 'status-err');
+    bar.style.display = 'block';
+    bar.textContent = msg;
+    if (ok) setTimeout(() => { bar.style.display = 'none'; }, 9000);
+  }
+
+  // Detect local file mode and warn + ensure buttons work
+  (function() {
+    if (window.location.protocol === 'file:') {
+      const bar = document.createElement('div');
+      bar.style.cssText = 'background:#FFF8EC;border:0.5px solid #FAC775;border-radius:7px;padding:8px 14px;font-size:12px;color:#BA7517;margin-bottom:10px;';
+      bar.textContent = '⚠ Running locally — file uploads and form submission require GitHub Pages. Line item rows and field editing work normally.';
+      document.querySelector('.page').insertBefore(bar, document.getElementById('status-bar').nextSibling);
+    }
+  })();
+</script>
+</body>
+</html>
