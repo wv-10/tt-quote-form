@@ -93,8 +93,8 @@
     <div style="background:#f0f6ff; border:0.5px solid #B5D4F4; border-radius:7px; padding:10px 14px; display:flex; align-items:center; gap:10px;">
       <span style="font-size:18px; flex-shrink:0;">📄</span>
       <div>
-        <div style="font-size:13px; font-weight:600; color:#0C447C;">Upload your PDF quote first — it will auto-fill the form below</div>
-        <div style="font-size:12px; color:#555; margin-top:2px;">Select your PDF in the upload box below. The form will populate automatically — review, complete any remaining fields, then submit.</div>
+        <div style="font-size:13px; font-weight:600; color:#0C447C;">Upload your quote document and complete all required fields below</div>
+        <div style="font-size:12px; color:#555; margin-top:2px;">Attach your PDF or Word quote document, fill in all required fields marked with *, then submit. Your Tenstorrent contact will be notified automatically.</div>
       </div>
     </div>
   </div>
@@ -484,8 +484,7 @@
       const f = input.files[0];
       if (f.size > 25 * 1024 * 1024) { showStatus('PDF exceeds 25 MB.', false); input.value=''; return; }
       nameEl.textContent = f.name + ' (' + (f.size/1024/1024).toFixed(1) + ' MB)';
-      statusEl.innerHTML = '<span style="color:#185FA5;">✦ Reading PDF and auto-filling form…</span>';
-      parsePdf();
+      statusEl.innerHTML = '<span style="color:#3B6D11;">✓ File attached — please complete the form fields below.</span>';
     }
   }
 
@@ -522,25 +521,23 @@
       const base64   = await fileToBase64(input.files[0]);
       const mimeType = input.files[0].type || 'application/pdf';
 
-      // Send as JSON (not FormData) to avoid base64 truncation on large files
-      const body = JSON.stringify({
+      const formData = new FormData();
+      formData.append('data', JSON.stringify({
         action:   'parse',
         base64:   base64,
         mimeType: mimeType,
-      });
+      }));
 
-      const response = await fetch(SUBMIT_URL, {
-        method:  'POST',
-        headers: { 'Content-Type': 'text/plain' }, // text/plain avoids CORS preflight
-        body:    body,
-      });
+      const response = await fetch(SUBMIT_URL, { method: 'POST', body: formData });
 
+      // Apps Script redirects cross-origin POSTs — response may be opaque
+      // Try to read text; if we can't, check executions log
       let result;
       try {
         const text = await response.text();
         result = JSON.parse(text);
       } catch(e) {
-        throw new Error('Could not read response from server.');
+        throw new Error('Server responded but response could not be read (CORS). Check Apps Script Executions log.');
       }
 
       if (!result.success) throw new Error(result.error || 'Parse failed on server.');
