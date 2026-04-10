@@ -510,116 +510,95 @@
     showStatus('Please use the Browse button to select files.', false);
   }
 
-  // ---- AI PDF Parse ----
+  // ---- AI PDF Parse — routes through Apps Script (key stored server-side) ----
   async function parsePdf() {
     const input    = document.getElementById('pdf-input');
     const statusEl = document.getElementById('parse-status');
     if (!input.files || input.files.length === 0) return;
 
+    statusEl.innerHTML = '<span style="color:#185FA5;">✦ Reading PDF and auto-filling form…</span>';
+
     try {
-      const base64 = await fileToBase64(input.files[0]);
+      const base64   = await fileToBase64(input.files[0]);
+      const mimeType = input.files[0].type || 'application/pdf';
 
-      const prompt = `You are parsing a supplier quote PDF for Tenstorrent's procurement team.
-
-Extract all available information and return ONLY a valid JSON object with these fields (use null for any field not found):
-{
-  "vendorName": string,
-  "contactName": string,
-  "contactEmail": string,
-  "contactPhone": string,
-  "quoteRef": string,
-  "quoteDate": string (YYYY-MM-DD format),
-  "validUntil": string (YYYY-MM-DD format),
-  "currency": string (USD/CNY/EUR/TWD/CAD/JPY),
-  "paymentTerms": string,
-  "incoterms": string,
-  "shipFromCity": string,
-  "shipFromCountry": string,
-  "lines": [
-    {
-      "vendorPn": string,
-      "description": string,
-      "moq": number or null,
-      "unitPrice": number or null,
-      "leadTime": string,
-      "toolingNre": number or null,
-      "htscode": string or null,
-      "coo": string or null
-    }
-  ]
-}
-
-Rules:
-- Return ONLY the JSON. No explanation, no markdown, no backticks.
-- For lines, extract top-level or sub-assembly line items only. Do not include individual BOM components.
-- If the document has pricing at multiple quantities, put the base/MOQ price in unitPrice.
-- Dates must be YYYY-MM-DD. If only month/year found, use the 1st of that month.`;
-
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
-          max_tokens: 1000,
-          messages: [{
-            role: 'user',
-            content: [
-              { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: base64 } },
-              { type: 'text', text: prompt }
-            ]
-          }]
-        })
+      // Send as JSON (not FormData) to avoid base64 truncation on large files
+      const body = JSON.stringify({
+        action:   'parse',
+        base64:   base64,
+        mimeType: mimeType,
       });
 
-      const data   = await response.json();
-      const text   = data.content && data.content[0] ? data.content[0].text : '';
-      const parsed = JSON.parse(text.replace(/```json|```/g, '').trim());
+      const response = await fetch(SUBMIT_URL, {
+        method:  'POST',
+        headers: { 'Content-Type': 'text/plain' }, // text/plain avoids CORS preflight
+        body:    body,
+      });
 
-      applyParsedData(parsed);
+      let result;
+      try {
+        const text = await response.text();
+        result = JSON.parse(text);
+      } catch(e) {
+        throw new Error('Could not read response from server.');
+      }
+
+      if (!result.success) throw new Error(result.error || 'Parse failed on server.');
+
+      applyParsedData(result.parsed);
       statusEl.innerHTML = '<span style="color:#3B6D11;">✓ Form populated — review and complete any remaining fields.</span>'
         + ' <a href="#" onclick="parsePdf(); return false;" style="font-size:11px; color:#185FA5; margin-left:6px;">Re-parse</a>';
 
     } catch(err) {
-      statusEl.innerHTML = '<span style="color:#A32D2D;">Auto-fill failed — please fill fields manually.</span>'
+      statusEl.innerHTML = '<span style="color:#A32D2D;">Auto-fill failed — ' + err.message + '</span>'
         + ' <a href="#" onclick="parsePdf(); return false;" style="font-size:11px; color:#185FA5; margin-left:6px;">Try again</a>';
     }
   }
 
   function applyParsedData(d) {
     const set = (id, val) => { if (val && document.getElementById(id)) document.getElementById(id).value = val; };
-    set('v-name',    d.vendorName);
-    set('v-contact', d.contactName);
-    set('v-email',   d.contactEmail);
-    set('v-phone',   d.contactPhone);
-    set('v-ref',     d.quoteRef);
-    set('q-date',    d.quoteDate);
-    set('q-valid',   d.validUntil);
-    set('sf-city',   d.shipFromCity);
-    set('sf-country',d.shipFromCountry);
+    set('v-name',     d.vendorName);
+    set('v-contact',  d.contactName);
+    set('v-email',    d.contactEmail);
+    set('v-phone',    d.contactPhone);
+    set('v-contact2', d.contact2Name);
+    set('v-email2',   d.contact2Email);
+    set('v-phone2',   d.contact2Phone);
+    set('v-ref',      d.quoteRef);
+    set('q-date',     d.quoteDate);
+    set('q-valid',    d.validUntil);
+    set('sf-city',    d.shipFromCity);
+    set('sf-country', d.shipFromCountry);
+    set('q-named-place', d.namedPlace);
     if (d.currency)     setSelectByValue('q-currency', d.currency);
     if (d.paymentTerms) setSelectByValue('q-pay', d.paymentTerms);
     if (d.incoterms)    setSelectByValue('q-inco', d.incoterms);
 
-    // Populate line items
     if (d.lines && d.lines.length > 0) {
       document.getElementById('lines-body').innerHTML = '';
       lineCount = 0;
       d.lines.forEach(l => {
         addLine('part');
         const rows = document.querySelectorAll('#lines-body tr');
-        const tr = rows[rows.length - 1];
-        const c = tr.querySelectorAll('td');
-        if (l.vendorPn)    c[2].querySelector('input').value = l.vendorPn;
-        if (l.description) c[3].querySelector('input').value = l.description;
-        if (l.moq)         c[5].querySelector('input').value = l.moq;
-        if (l.unitPrice)   c[6].querySelector('input').value = l.unitPrice;
-        if (l.leadTime)    c[15].querySelector('input').value = l.leadTime;
-        if (l.toolingNre)  c[17].querySelector('input').value = l.toolingNre;
-        if (l.htscode)     c[18].querySelector('input').value = l.htscode;
-        if (l.coo)         c[19].querySelector('input').value = l.coo;
+        const tr   = rows[rows.length - 1];
+        const c    = tr.querySelectorAll('td');
+        if (l.vendorPn)    c[2].querySelector('input').value  = l.vendorPn;
+        if (l.description) c[3].querySelector('input').value  = l.description;
+        if (l.moq)         c[6].querySelector('input').value  = l.moq;
+        if (l.unitPrice)   c[7].querySelector('input').value  = l.unitPrice;
+        if (l.price100)    c[8].querySelector('input').value  = l.price100;
+        if (l.price250)    c[9].querySelector('input').value  = l.price250;
+        if (l.price500)    c[10].querySelector('input').value = l.price500;
+        if (l.price1k)     c[11].querySelector('input').value = l.price1k;
+        if (l.price5k)     c[12].querySelector('input').value = l.price5k;
+        if (l.leadTime)    c[16].querySelector('input').value = l.leadTime;
+        if (l.toolingNre)  c[18].querySelector('input').value = l.toolingNre;
+        if (l.htscode)     c[19].querySelector('input').value = l.htscode;
+        if (l.coo)         c[20].querySelector('input').value = l.coo;
       });
     }
   }
+
 
   function setSelectByValue(id, val) {
     const el = document.getElementById(id);
