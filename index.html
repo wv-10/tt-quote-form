@@ -126,7 +126,7 @@
         </div>
       </div>
       <div style="margin-top:12px; padding:8px 12px; background:#FFF8EC; border-radius:6px; font-size:11px; color:#BA7517;">
-        Questions? Contact your Tenstorrent sourcing representative directly or email <strong><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="e49392858a80968d8a81a490818a97908b9696818a90ca878b89">[email&#160;protected]</a></strong>
+        Questions? Contact your Tenstorrent sourcing representative directly or email <strong>wvandrine [at] tenstorrent.com</strong>
       </div>
     </div>
   </div>
@@ -355,7 +355,7 @@
 
 </div>
 
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+<script>
   const SUBMIT_URL = 'https://script.google.com/a/macros/tenstorrent.com/s/AKfycbyh-N5j17w3_bsRvVleRRfTh8kXQz_WShiwB6HheWJfQeZ9FZw0qW6PZUzh5fms7Yw/exec';
   let lineCount = 0;
 
@@ -786,7 +786,7 @@
         btn.disabled = false; btn.textContent = 'Submit quote response';
       }
     } catch (err) {
-      showStatus('Network error — please try again or contact wvandrine@tenstorrent.com (' + err.message + ')', false);
+      showStatus('Network error — please try again or contact wvandrine [at] tenstorrent.com (' + err.message + ')', false);
       btn.disabled = false; btn.textContent = 'Submit quote response';
     }
   }
@@ -863,4 +863,11 @@
     if (window.location.protocol === 'file:') {
       const bar = document.createElement('div');
       bar.style.cssText = 'background:#FFF8EC;border:0.5px solid #FAC775;border-radius:7px;padding:8px 14px;font-size:12px;color:#BA7517;margin-bottom:10px;';
-      bar.textContent = '⚠ Running locally — file uploads and 
+      bar.textContent = '⚠ Running locally — file uploads and form submission require GitHub Pages. Line item rows and field editing work normally.';
+      document.querySelector('.page').insertBefore(bar, document.getElementById('status-bar').nextSibling);
+    }
+  })();
+
+</script>
+</body>
+</html>
