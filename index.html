@@ -16,7 +16,7 @@
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 14px; color: #1a1a1a; background: #f4f5f7; padding: 2rem 1rem; }
     .page { max-width: 1060px; margin: 0 auto; }
     .tt-bar { background: #111; border-radius: 10px 10px 0 0; padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; }
-    .tt-bar img { height: 44px; }
+    .tt-bar img { height: 66px; }
     .tt-bar small { font-size: 11px; color: #aaa; letter-spacing: 0.04em; }
     .badge { display: inline-flex; align-items: center; padding: 3px 9px; border-radius: 6px; font-size: 11px; font-weight: 500; }
     .badge-req { background: #FCEBEB; color: #A32D2D; }
@@ -34,16 +34,18 @@
     .field input:focus, .field select:focus, .field textarea:focus { outline: none; border-color: #185FA5; box-shadow: 0 0 0 3px rgba(24,95,165,0.08); }
     .field textarea { resize: vertical; min-height: 60px; line-height: 1.5; }
     .tbl-wrap { overflow-x: auto; border: 0.5px solid #d8d8d4; border-radius: 8px; margin-bottom: 10px; }
-    table { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 1200px; }
-    thead th { background: #0C447C; color: #E6F1FB; font-weight: 500; font-size: 11px; text-align: left; padding: 8px 7px; border-right: 0.5px solid #185FA5; white-space: nowrap; }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 780px; }
+    thead th { background: #0C447C; color: #E6F1FB; font-weight: 500; font-size: 11px; text-align: center; padding: 6px 4px; border-right: 0.5px solid #185FA5; white-space: normal; vertical-align: middle; line-height: 1.3; }
     thead th:last-child { border-right: none; }
-    tbody td { border-bottom: 0.5px solid #ebebea; border-right: 0.5px solid #ebebea; padding: 3px; vertical-align: middle; }
+    tbody td { border-bottom: 0.5px solid #ebebea; border-right: 0.5px solid #ebebea; padding: 3px; vertical-align: middle; text-align: center; }
     tbody td:last-child { border-right: none; }
     tbody tr:last-child td { border-bottom: none; }
-    tbody td input, tbody td select { width: 100%; border: none; background: transparent; padding: 5px 6px; font-size: 12px; font-family: inherit; color: #1a1a1a; outline: none; }
+    tbody td input, tbody td select { width: 100%; border: none; background: transparent; padding: 5px 4px; font-size: 12px; font-family: inherit; color: #1a1a1a; outline: none; text-align: center; }
     tbody td input:focus, tbody td select:focus { background: #f0f6ff; border-radius: 4px; }
+    tbody td input[type="number"]::-webkit-inner-spin-button,
+    tbody td input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+    tbody td input[type="number"] { -moz-appearance: textfield; }
     tbody tr:hover td { background: #fafaf8; }
-    tr.exc-row td { background: #FFF8EC !important; }
     .row-num { text-align: center; color: #aaa; font-size: 11px; padding: 4px 6px !important; }
     .row-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
     .exc-note { font-size: 11px; color: #BA7517; }
@@ -63,10 +65,6 @@
     .drop-zone.dragover { border-color: #185FA5; background: #f0f6ff; }
     .att-name { font-size: 12px; color: #185FA5; margin-top: 6px; font-weight: 500; }
     .form-footer { display: flex; justify-content: flex-end; gap: 8px; align-items: center; margin-top: 1rem; flex-wrap: wrap; }
-    .info-strip { background: #f0f6ff; border: 0.5px solid #B5D4F4; border-radius: 8px; padding: 10px 14px; margin-top: 1.5rem; }
-    .info-strip p { font-size: 12px; color: #185FA5; margin-bottom: 6px; font-weight: 500; }
-    .tags { display: flex; gap: 6px; flex-wrap: wrap; }
-    .tag { background: #fff; border: 0.5px solid #B5D4F4; border-radius: 6px; padding: 3px 10px; font-size: 11px; color: #185FA5; }
     .field input.err, .field select.err, .field textarea.err { border-color: #E24B4A !important; background: #FFF5F5 !important; }
     .field .err-msg { font-size:11px; color:#A32D2D; margin-top:3px; display:none; }
     .field input.err ~ .err-msg, .field select.err ~ .err-msg { display:block; }
@@ -95,6 +93,40 @@
       <div>
         <div style="font-size:13px; font-weight:600; color:#0C447C;">Upload your quote document and complete all required fields below</div>
         <div style="font-size:12px; color:#555; margin-top:2px;">Attach your PDF or Word quote document, fill in all required fields marked with *, then submit. Your Tenstorrent contact will be notified automatically.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Collapsible help box -->
+  <div class="section" style="padding:0;">
+    <button type="button" onclick="toggleHelp()" style="width:100%; background:none; border:none; padding:10px 1.5rem; text-align:left; cursor:pointer; display:flex; align-items:center; gap:8px; font-family:inherit;">
+      <span id="help-arrow" style="font-size:11px; color:#888; transition:transform 0.2s;">▶</span>
+      <span style="font-size:12px; font-weight:600; color:#555;">How to fill in this form</span>
+      <span style="font-size:11px; color:#aaa; margin-left:4px;">— click to expand</span>
+    </button>
+    <div id="help-body" style="display:none; padding:0 1.5rem 1rem; border-top:0.5px solid #f0f0ee;">
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:12px; font-size:12px; color:#555; line-height:1.6;">
+        <div>
+          <div style="font-weight:600; color:#0C447C; margin-bottom:6px;">General</div>
+          <div>• Fields marked <span style="color:#A32D2D; font-weight:600;">*</span> are required — the form cannot be submitted without them.</div>
+          <div>• Upload your quote document (PDF or Word) using the Browse button at the top.</div>
+          <div>• If you have multiple part numbers, use the <strong>+ Part row</strong> button to add a row for each one.</div>
+          <div>• For tooling or mold costs, use <strong>+ Tooling row</strong>. For engineering, consulting, IP, or design fees, use <strong>+ NRE row</strong>.</div>
+          <div>• If your quote has a sub-assembly with a detailed BOM, upload the Excel breakdown using the BOM Excel button.</div>
+        </div>
+        <div>
+          <div style="font-weight:600; color:#0C447C; margin-bottom:6px;">Field definitions</div>
+          <div><strong>MOQ</strong> — Minimum order quantity. Enter the smallest quantity you will accept per order.</div>
+          <div><strong>UOM</strong> — Unit of measure (e.g. each, lot, kg, seat/year for software).</div>
+          <div><strong>Lead time</strong> — Time from purchase order to delivery, in weeks (e.g. "8 weeks").</div>
+          <div><strong>Incoterms</strong> — Shipping terms that define who is responsible for freight and risk (e.g. EXW, FOB, DDP).</div>
+          <div><strong>HTS / HS Code</strong> — Harmonized tariff code for your product. Leave blank if unknown.</div>
+          <div><strong>COO</strong> — Country of Origin. The country where the product is manufactured.</div>
+          <div><strong>Exceptions</strong> — Note any special conditions that differ from standard terms (e.g. minimum order value, forecast requirements).</div>
+        </div>
+      </div>
+      <div style="margin-top:12px; padding:8px 12px; background:#FFF8EC; border-radius:6px; font-size:11px; color:#BA7517;">
+        Questions? Contact your Tenstorrent sourcing representative directly or email <strong><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="e49392858a80968d8a81a490818a97908b9696818a90ca878b89">[email&#160;protected]</a></strong>
       </div>
     </div>
   </div>
@@ -227,33 +259,27 @@
       <table id="lines-tbl">
         <thead>
           <tr>
-            <th style="width:26px;">#</th>
-            <th style="width:100px;">TT Part #</th>
-            <th style="width:100px;">Vendor Part #</th>
-            <th style="width:140px;">Description <span class="req">*</span></th>
-            <th style="width:62px;">Type <span class="req">*</span></th>
-            <th style="width:55px;">UOM</th>
-            <th style="width:52px;">MOQ <span class="req">*</span></th>
-            <th style="width:75px;">Price (MOQ) <span class="req">*</span></th>
-            <th style="width:72px;">Price @ 100</th>
-            <th style="width:72px;">Price @ 250</th>
-            <th style="width:72px;">Price @ 500</th>
-            <th style="width:72px;">Price @ 1k</th>
-            <th style="width:72px;">Price @ 5k</th>
-            <th style="width:65px;">Other Qty</th>
-            <th style="width:72px;">Price (Other)</th>
-            <th style="width:68px;">Sample Price</th>
-            <th style="width:80px;">Lead Time (Std) <span class="req">*</span></th>
-            <th style="width:80px;">Lead Time (Sample)</th>
-            <th style="width:78px;">Tooling NRE ($)</th>
-            <th style="width:90px;">HTS / HS Code</th>
-            <th style="width:110px;">COO</th>
-            <th style="width:56px;" title="RoHS compliant?">RoHS</th>
-            <th style="width:56px;" title="REACH compliant?">REACH</th>
-            <th style="width:56px;" title="Conflict minerals (3TG) compliant?">3TG</th>
-            <th style="width:60px;" title="Sub-assembly — BOM breakdown attached?">Sub-assy</th>
-            <th style="width:88px;">Exception Flag</th>
-            <th style="width:30px;"></th>
+            <th style="width:22px;">#</th>
+            <th style="width:90px;" title="Tenstorrent part number — leave blank if not provided in RFQ">TT Part #</th>
+            <th style="width:90px;" title="Your internal part number or model number">Vendor Part #</th>
+            <th style="width:130px;">Description</th>
+            <th style="width:48px;" title="Unit of measure — e.g. each, lot, kg, seat/yr">UOM</th>
+            <th style="width:46px;" title="Minimum order quantity — smallest quantity per order">MOQ</th>
+            <th style="width:62px;" title="Unit price at MOQ quantity" id="th-price-moq">Price (MOQ)</th>
+            <th style="width:55px;" title="Unit price if ordering 100 units" id="th-price-100">@ 100</th>
+            <th style="width:55px;" title="Unit price if ordering 250 units" id="th-price-250">@ 250</th>
+            <th style="width:55px;" title="Unit price if ordering 500 units" id="th-price-500">@ 500</th>
+            <th style="width:55px;" title="Unit price if ordering 1,000 units" id="th-price-1k">@ 1k</th>
+            <th style="width:55px;" title="Unit price if ordering 5,000 units" id="th-price-5k">@ 5k</th>
+            <th style="width:48px;" title="Any other quantity you quoted — enter quantity here">Other Qty</th>
+            <th style="width:55px;" title="Unit price for the quantity in the Other Qty column" id="th-price-other">Price (Other Qty)</th>
+            <th style="width:52px;" title="Unit price for a pre-production sample order" id="th-price-sample">Sample Price</th>
+            <th style="width:46px;" title="Standard production lead time from PO to delivery, in weeks">LT Std (wks)</th>
+            <th style="width:46px;" title="Lead time for a sample or prototype order, in weeks">LT Sample (wks)</th>
+            <th style="width:58px;" title="One-time tooling or NRE cost in USD — enter 0 if not applicable" id="th-tooling-nre">Tooling NRE ($)</th>
+            <th style="width:65px;" title="Harmonized Tariff Schedule code — leave blank if unknown">HTS / HS Code</th>
+            <th style="width:70px;" title="Country of Origin — country where the product is manufactured">COO</th>
+            <th style="width:28px;"></th>
           </tr>
         </thead>
         <tbody id="lines-body"></tbody>
@@ -263,17 +289,16 @@
       <button class="btn btn-sm" type="button" onclick="addLine('part')">+ Part row</button>
       <button class="btn btn-sm" type="button" onclick="addLine('tooling')">+ Tooling row</button>
       <button class="btn btn-sm" type="button" onclick="addLine('nre')">+ NRE row</button>
-      <span class="exc-note" style="margin-left:4px;">&#9650; Amber rows have exceptions — add detail in the Exceptions section below.</span>
     </div>
   </div>
 
   <div class="section" style="padding:10px 1.5rem;">
     <div style="font-size:11px; font-weight:600; color:#888; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:8px;">Exceptions &amp; notes <span style="font-weight:400; text-transform:none; letter-spacing:0; color:#bbb;">— leave blank if none apply</span></div>
     <div style="display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:8px; margin-bottom:8px;">
-      <div class="field"><label style="font-size:11px;">Pricing</label><textarea id="exc-price" style="min-height:28px; font-size:11px; padding:5px 8px;" placeholder="Pricing constraints..."></textarea></div>
-      <div class="field"><label style="font-size:11px;">Lead time</label><textarea id="exc-lt" style="min-height:28px; font-size:11px; padding:5px 8px;" placeholder="Lead time constraints..."></textarea></div>
-      <div class="field"><label style="font-size:11px;">Tooling / NRE</label><textarea id="exc-tool" style="min-height:28px; font-size:11px; padding:5px 8px;" placeholder="Tooling exceptions..."></textarea></div>
-      <div class="field"><label style="font-size:11px;">Payment / commercial</label><textarea id="exc-pay" style="min-height:28px; font-size:11px; padding:5px 8px;" placeholder="Payment exceptions..."></textarea></div>
+      <div class="field"><label style="font-size:11px;">Pricing</label><textarea id="exc-price" maxlength="500" style="min-height:28px; font-size:11px; padding:5px 8px;" placeholder="Pricing constraints..."></textarea></div>
+      <div class="field"><label style="font-size:11px;">Lead time</label><textarea id="exc-lt" maxlength="500" style="min-height:28px; font-size:11px; padding:5px 8px;" placeholder="Lead time constraints..."></textarea></div>
+      <div class="field"><label style="font-size:11px;">Tooling / NRE</label><textarea id="exc-tool" maxlength="500" style="min-height:28px; font-size:11px; padding:5px 8px;" placeholder="Tooling exceptions..."></textarea></div>
+      <div class="field"><label style="font-size:11px;">Payment / commercial</label><textarea id="exc-pay" maxlength="500" style="min-height:28px; font-size:11px; padding:5px 8px;" placeholder="Payment exceptions..."></textarea></div>
     </div>
     <div class="field"><label style="font-size:11px;">Additional notes</label><textarea id="exc-notes" style="min-height:28px; font-size:11px; padding:5px 8px;" placeholder="Any other assumptions or open items..."></textarea></div>
   </div>
@@ -282,18 +307,6 @@
     <button class="btn" type="button" onclick="clearForm()">Clear form</button>
     <button class="btn" type="button" onclick="exportCSV()">Export CSV</button>
     <button class="btn btn-primary" type="button" id="submit-btn" onclick="submitForm()">Submit quote response</button>
-  </div>
-
-  <div class="info-strip">
-    <p>On submission this record will:</p>
-    <div class="tags">
-      <span class="tag">→ Generate a TT submission reference number</span>
-      <span class="tag">→ Log to Vendor Quotes Google Sheet</span>
-      <span class="tag">→ Save attachment to Drive /Vendor Quotes/[RFQ]/[Vendor]/</span>
-      <span class="tag">→ Email confirmation + submission # to vendor</span>
-      <span class="tag">→ Notify your Tenstorrent SC contact</span>
-      <span class="tag">→ Flag exception rows for review</span>
-    </div>
   </div>
 
   <!-- Controlled Document Footer -->
@@ -319,7 +332,7 @@
     <div style="display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:0; border:0.5px solid #d8d8d4; border-top:none; border-radius:0 0 8px 8px; overflow:hidden; font-size:11px;">
       <div style="padding:8px 12px; border-right:0.5px solid #d8d8d4;">
         <div style="color:#888; font-weight:600; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:3px;">Owner</div>
-        <div style="color:#1a1a1a; font-weight:500;">Warren Van Drine</div>
+        <div style="color:#1a1a1a; font-weight:500;">TT Supply Chain</div>
       </div>
       <div style="padding:8px 12px; border-right:0.5px solid #d8d8d4;">
         <div style="color:#888; font-weight:600; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:3px;">Department</div>
@@ -342,9 +355,46 @@
 
 </div>
 
-<script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
   const SUBMIT_URL = 'https://script.google.com/a/macros/tenstorrent.com/s/AKfycbyh-N5j17w3_bsRvVleRRfTh8kXQz_WShiwB6HheWJfQeZ9FZw0qW6PZUzh5fms7Yw/exec';
   let lineCount = 0;
+
+  const CURRENCY_SYMBOLS = {
+    'USD': 'USD $', 'CNY': 'CNY ¥', 'EUR': 'EUR €',
+    'TWD': 'TWD $', 'CAD': 'CAD $', 'JPY': 'JPY ¥', 'Other': ''
+  };
+
+  function updateCurrencyHeaders() {
+    const cur = document.getElementById('q-currency').value;
+    const sym = CURRENCY_SYMBOLS[cur] || (cur || '');
+    const priceIds = [
+      'th-price-moq', 'th-price-100', 'th-price-250', 'th-price-500',
+      'th-price-1k',  'th-price-5k',  'th-price-other', 'th-price-sample', 'th-tooling-nre'
+    ];
+    const labels = {
+      'th-price-moq':    sym ? `Price (MOQ)\n${sym}` : 'Price (MOQ)',
+      'th-price-100':    sym ? `@ 100\n${sym}` : '@ 100',
+      'th-price-250':    sym ? `@ 250\n${sym}` : '@ 250',
+      'th-price-500':    sym ? `@ 500\n${sym}` : '@ 500',
+      'th-price-1k':     sym ? `@ 1k\n${sym}` : '@ 1k',
+      'th-price-5k':     sym ? `@ 5k\n${sym}` : '@ 5k',
+      'th-price-other':  sym ? `Price\n(Other)\n${sym}` : 'Price (Other Qty)',
+      'th-price-sample': sym ? `Sample\nPrice\n${sym}` : 'Sample Price',
+      'th-tooling-nre':  sym ? `Tooling\nNRE\n${sym}` : 'Tooling NRE ($)',
+    };
+    priceIds.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.innerHTML = labels[id].replace(/\n/g, '<br>');
+    });
+  }
+
+  function toggleHelp() {
+    const body  = document.getElementById('help-body');
+    const arrow = document.getElementById('help-arrow');
+    const open  = body.style.display === 'none';
+    body.style.display  = open ? 'block' : 'none';
+    arrow.textContent   = open ? '▼' : '▶';
+  }
 
   function getShipFromCountry() {
     return document.getElementById('sf-country').value.trim() || '';
@@ -364,6 +414,7 @@
     document.getElementById('sf-country').addEventListener('input', function() {
       if (document.getElementById('global-coo').value === 'same') applyGlobalCoo();
     });
+    document.getElementById('q-currency').addEventListener('change', updateCurrencyHeaders);
     // Clear red highlight when user starts correcting a field
     document.addEventListener('input', e => { if (e.target.classList.contains('err')) e.target.classList.remove('err'); });
     document.addEventListener('change', e => { if (e.target.classList.contains('err')) e.target.classList.remove('err'); });
@@ -379,13 +430,7 @@
     const body = document.getElementById('lines-body');
     const tr = document.createElement('tr');
     tr.setAttribute('data-id', lineCount);
-    const typeOpts = `
-      <option value="">—</option>
-      <option value="part"    ${type==='part'   ?'selected':''}>Part</option>
-      <option value="tooling" ${type==='tooling'?'selected':''}>Tooling</option>
-      <option value="nre"     ${type==='nre'    ?'selected':''}>NRE</option>
-      <option value="license">License</option>
-      <option value="sample">Sample</option>`;
+    tr.setAttribute('data-type', type);
     const uomOpts = `
       <option value="each">each</option>
       <option value="lot">lot</option>
@@ -395,46 +440,32 @@
       <option value="kg">kg</option>
       <option value="m">m</option>
       <option value="other">other</option>`;
-    const excOpts = `
-      <option value="">None</option>
-      <option value="pricing">Pricing</option>
-      <option value="leadtime">Lead time</option>
-      <option value="tooling">Tooling</option>
-      <option value="other">Other</option>`;
-    const defaultCoo = getGlobalCoo();
+    const descPlaceholder = type === 'tooling' ? 'e.g. Injection mold tooling for housing'
+                          : type === 'nre'     ? 'e.g. Engineering / Consulting / IP / Design — describe service'
+                          : 'e.g. Heatsink assembly, fan module...';
     tr.innerHTML = `
       <td class="row-num">${lineCount}</td>
       <td><input type="text" placeholder="TT-XXXXXXX"></td>
-      <td><input type="text" placeholder="Vendor PN"></td>
-      <td><input type="text" placeholder="Description"></td>
-      <td><select>${typeOpts}</select></td>
+      <td><input type="text" placeholder="Your part # / model #"></td>
+      <td><input type="text" placeholder="${descPlaceholder}"></td>
       <td><select style="font-size:11px;">${uomOpts}</select></td>
-      <td><input type="number" placeholder="0" min="0"></td>
+      <td><input type="number" placeholder="1" min="0"></td>
       <td><input type="number" placeholder="0.00" step="0.01" min="0"></td>
       <td><input type="number" placeholder="0.00" step="0.01" min="0"></td>
       <td><input type="number" placeholder="0.00" step="0.01" min="0"></td>
       <td><input type="number" placeholder="0.00" step="0.01" min="0"></td>
       <td><input type="number" placeholder="0.00" step="0.01" min="0"></td>
       <td><input type="number" placeholder="0.00" step="0.01" min="0"></td>
-      <td><input type="number" placeholder="0" min="0"></td>
+      <td><input type="number" placeholder="qty" min="0"></td>
       <td><input type="number" placeholder="0.00" step="0.01" min="0"></td>
       <td><input type="number" placeholder="0.00" step="0.01" min="0"></td>
-      <td><input type="text" placeholder="e.g. 8 weeks"></td>
-      <td><input type="text" placeholder="e.g. 4 weeks"></td>
-      <td><input type="number" placeholder="0.00" step="0.01" min="0"></td>
+      <td><input type="number" placeholder="e.g. 8" min="0"></td>
+      <td><input type="number" placeholder="e.g. 4" min="0"></td>
+      <td><input type="number" placeholder="0.00 if none" step="0.01" min="0"></td>
       <td><input type="text" placeholder="e.g. 8414.59"></td>
-      <td><input type="text" class="coo-input" placeholder="Country of origin" value="${defaultCoo}"></td>
-      <td style="text-align:center;"><input type="checkbox" class="rohs-chk" title="RoHS compliant"></td>
-      <td style="text-align:center;"><input type="checkbox" class="reach-chk" title="REACH compliant"></td>
-      <td style="text-align:center;"><input type="checkbox" class="ttg-chk" title="Conflict minerals (3TG) compliant"></td>
-      <td style="text-align:center;"><input type="checkbox" class="subassy-chk" title="Sub-assembly — BOM Excel attached?"></td>
-      <td><select onchange="toggleExc(this,${lineCount})" style="font-size:11px;">${excOpts}</select></td>
+      <td><input type="text" class="coo-input" placeholder="e.g. China" value="${defaultCoo}"></td>
       <td><button class="btn btn-del btn-sm" type="button" onclick="removeLine(${lineCount})">✕</button></td>`;
     body.appendChild(tr);
-  }
-
-  function toggleExc(sel, id) {
-    document.querySelector(`tr[data-id="${id}"]`).classList.toggle('exc-row', !!sel.value);
   }
 
   function removeLine(id) {
@@ -450,28 +481,23 @@
         tt_pn:        c[1].querySelector('input').value,
         vendor_pn:    c[2].querySelector('input').value,
         description:  c[3].querySelector('input').value,
-        type:         c[4].querySelector('select').value,
-        uom:          c[5].querySelector('select').value,
-        moq:          c[6].querySelector('input').value,
-        price_moq:    c[7].querySelector('input').value,
-        price_100:    c[8].querySelector('input').value,
-        price_250:    c[9].querySelector('input').value,
-        price_500:    c[10].querySelector('input').value,
-        price_1k:     c[11].querySelector('input').value,
-        price_5k:     c[12].querySelector('input').value,
-        other_qty:    c[13].querySelector('input').value,
-        price_other:  c[14].querySelector('input').value,
-        price_sample: c[15].querySelector('input').value,
-        lt_std:       c[16].querySelector('input').value,
-        lt_sample:    c[17].querySelector('input').value,
-        tooling_nre:  c[18].querySelector('input').value,
-        hts_code:     c[19].querySelector('input').value,
-        coo:          c[20].querySelector('input').value,
-        rohs:         c[21].querySelector('input').checked,
-        reach:        c[22].querySelector('input').checked,
-        conflict_minerals: c[23].querySelector('input').checked,
-        sub_assembly: c[24].querySelector('input').checked,
-        exception:    c[25].querySelector('select').value,
+        type:         tr.getAttribute('data-type') || '',
+        uom:          c[4].querySelector('select').value,
+        moq:          c[5].querySelector('input').value,
+        price_moq:    c[6].querySelector('input').value,
+        price_100:    c[7].querySelector('input').value,
+        price_250:    c[8].querySelector('input').value,
+        price_500:    c[9].querySelector('input').value,
+        price_1k:     c[10].querySelector('input').value,
+        price_5k:     c[11].querySelector('input').value,
+        other_qty:    c[12].querySelector('input').value,
+        price_other:  c[13].querySelector('input').value,
+        price_sample: c[14].querySelector('input').value,
+        lt_std:       c[15].querySelector('input').value,
+        lt_sample:    c[16].querySelector('input').value,
+        tooling_nre:  c[17].querySelector('input').value,
+        hts_code:     c[18].querySelector('input').value,
+        coo:          c[19].querySelector('input').value,
       };
     });
   }
@@ -484,7 +510,7 @@
       const f = input.files[0];
       if (f.size > 25 * 1024 * 1024) { showStatus('PDF exceeds 25 MB.', false); input.value=''; return; }
       nameEl.textContent = f.name + ' (' + (f.size/1024/1024).toFixed(1) + ' MB)';
-      statusEl.innerHTML = '<span style="color:#3B6D11;">✓ File attached — please complete the form fields below.</span>';
+      statusEl.innerHTML = '<span style="color:#3B6D11;">✓ Ready to submit</span>';
     }
   }
 
@@ -581,17 +607,17 @@
         const c    = tr.querySelectorAll('td');
         if (l.vendorPn)    c[2].querySelector('input').value  = l.vendorPn;
         if (l.description) c[3].querySelector('input').value  = l.description;
-        if (l.moq)         c[6].querySelector('input').value  = l.moq;
-        if (l.unitPrice)   c[7].querySelector('input').value  = l.unitPrice;
-        if (l.price100)    c[8].querySelector('input').value  = l.price100;
-        if (l.price250)    c[9].querySelector('input').value  = l.price250;
-        if (l.price500)    c[10].querySelector('input').value = l.price500;
-        if (l.price1k)     c[11].querySelector('input').value = l.price1k;
-        if (l.price5k)     c[12].querySelector('input').value = l.price5k;
-        if (l.leadTime)    c[16].querySelector('input').value = l.leadTime;
-        if (l.toolingNre)  c[18].querySelector('input').value = l.toolingNre;
-        if (l.htscode)     c[19].querySelector('input').value = l.htscode;
-        if (l.coo)         c[20].querySelector('input').value = l.coo;
+        if (l.moq)         c[5].querySelector('input').value  = l.moq;
+        if (l.unitPrice)   c[6].querySelector('input').value  = l.unitPrice;
+        if (l.price100)    c[7].querySelector('input').value  = l.price100;
+        if (l.price250)    c[8].querySelector('input').value  = l.price250;
+        if (l.price500)    c[9].querySelector('input').value  = l.price500;
+        if (l.price1k)     c[10].querySelector('input').value = l.price1k;
+        if (l.price5k)     c[11].querySelector('input').value = l.price5k;
+        if (l.leadTime)    c[15].querySelector('input').value = l.leadTime;
+        if (l.toolingNre)  c[17].querySelector('input').value = l.toolingNre;
+        if (l.htscode)     c[18].querySelector('input').value = l.htscode;
+        if (l.coo)         c[19].querySelector('input').value = l.coo;
       });
     }
   }
@@ -726,21 +752,6 @@
         showStatus('Missing required fields: ' + missing.join(', '), false);
         btn.disabled = false; btn.textContent = 'Submit quote response'; return;
       }
-      const excRows = payload.lines.filter(l => l.exception && l.exception !== '');
-      if (excRows.length > 0) {
-        const hasDetail = payload.excPricing || payload.excLeadTime || payload.excTooling || payload.excPayment || payload.excNotes;
-        if (!hasDetail) {
-          showStatus('⚠ ' + excRows.length + ' exception row(s) flagged but no exception details provided. Please add detail in the Exceptions section.', false);
-          btn.disabled = false; btn.textContent = 'Submit quote response'; return;
-        }
-      }
-      // Apps Script cross-origin POST workaround:
-      // Fetch with no-cors means we can't read the response body, so we use
-      // a two-step approach — POST the payload as a form parameter (Apps Script
-      // reads it from e.parameter.data), then poll for the result via a GET.
-      // Simpler alternative: POST to a small relay, but for Apps Script the
-      // cleanest no-IT approach is to send as application/x-www-form-urlencoded
-      // with the JSON in a 'data' field, which bypasses the preflight entirely.
       const formData = new FormData();
       formData.append('data', JSON.stringify(payload));
 
@@ -799,7 +810,7 @@
       'TT SC Contact','TT Eng Contact',
       'Row #','TT Part #','Vendor Part #','Description','Type','MOQ','Unit Price (MOQ)',
       'Price@100','Price@250','Price@500','Price@1k','Price@5k','Other Qty','Price (Other)',
-      'Sample Price','Lead Time Std','Lead Time Sample','Tooling NRE','HTS/HS Code','COO','Exception Flag',
+      'Sample Price','Lead Time Std','Lead Time Sample','Tooling NRE','HTS/HS Code','COO',
       'Pricing Exceptions','LT Exceptions','Tooling Exceptions','Payment Exceptions','Notes'];
     const common = [p.vendorName,p.vendorSapCode,p.quoteRef,p.rfqRef,p.quoteDate,p.validUntil,
       p.currency,p.paymentTerms,p.incoterms,p.namedPlace,p.shipFromCity,p.shipFromCountry,
@@ -810,7 +821,7 @@
         l.seq||'',l.tt_pn||'',l.vendor_pn||'',l.description||'',l.type||'',
         l.moq||'',l.price_moq||'',l.price_100||'',l.price_250||'',l.price_500||'',l.price_1k||'',l.price_5k||'',
         l.other_qty||'',l.price_other||'',l.price_sample||'',
-        l.lt_std||'',l.lt_sample||'',l.tooling_nre||'',l.hts_code||'',l.coo||'',l.exception||'',
+        l.lt_std||'',l.lt_sample||'',l.tooling_nre||'',l.hts_code||'',l.coo||'',
         p.excPricing,p.excLeadTime,p.excTooling,p.excPayment,p.excNotes
       ].map(v => `"${String(v||'').replace(/"/g,'""')}"`);
       rows.push(row.join(','));
@@ -852,10 +863,4 @@
     if (window.location.protocol === 'file:') {
       const bar = document.createElement('div');
       bar.style.cssText = 'background:#FFF8EC;border:0.5px solid #FAC775;border-radius:7px;padding:8px 14px;font-size:12px;color:#BA7517;margin-bottom:10px;';
-      bar.textContent = '⚠ Running locally — file uploads and form submission require GitHub Pages. Line item rows and field editing work normally.';
-      document.querySelector('.page').insertBefore(bar, document.getElementById('status-bar').nextSibling);
-    }
-  })();
-</script>
-</body>
-</html>
+      bar.textContent = '⚠ Running locally — file uploads and 
