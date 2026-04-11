@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <script>
-    // Re-add base target only when hosted inside Apps Script (not local file)
-    if (window.location.protocol !== 'file:') {
+    // Only add base target="_top" when inside Apps Script iframe
+    if (window.location.href.indexOf('script.google.com') !== -1) {
       const b = document.createElement('base'); b.target = '_top';
       document.currentScript.parentNode.insertBefore(b, document.currentScript);
     }
