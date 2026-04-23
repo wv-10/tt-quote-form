@@ -444,6 +444,7 @@
     const descPlaceholder = type === 'tooling' ? 'e.g. Injection mold tooling for housing'
                           : type === 'nre'     ? 'e.g. Engineering / Consulting / IP / Design — describe service'
                           : 'e.g. Heatsink assembly, fan module...';
+    const defaultCoo = getGlobalCoo();
     tr.innerHTML = `
       <td class="row-num">${lineCount}</td>
       <td><input type="text" placeholder="TT-XXXXXXX"></td>
